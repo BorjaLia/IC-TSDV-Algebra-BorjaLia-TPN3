@@ -59,6 +59,8 @@ bool BoundingBoxCollision(MyBoundingBox& a, Vector3 aPos, MyBoundingBox& b, Vect
 	return true;
 }
 
+
+
 int main()
 {
 	const int screenWidth = 1600;
@@ -129,6 +131,18 @@ int main()
 			if (currentObject >= objects.size())
 			{
 				currentObject = 0;
+			}
+
+			obj = objects[currentObject];
+		}
+
+		if (IsKeyPressed(KEY_LEFT_SHIFT))
+		{
+			objects[currentObject] = obj;
+			currentObject--;
+			if (currentObject < 0)
+			{
+				currentObject = objects.size()-1;
 			}
 
 			obj = objects[currentObject];
