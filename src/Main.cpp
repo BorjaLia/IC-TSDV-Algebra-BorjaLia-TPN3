@@ -62,44 +62,44 @@ bool BoundingBoxCollision(MyBoundingBox& a, Vector3 aPos, MyBoundingBox& b, Vect
 
 bool IsPointInside(Vector3 point, Object object) {
 
-    Vector3 localPoint = Vector3Subtract(point, object.pos);
+	Vector3 localPoint = Vector3Subtract(point, object.pos);
 
-    for (int m = 0; m < object.model.meshCount; m++)
-    {
-        Mesh &mesh = object.model.meshes[m];
+	for (int m = 0; m < object.model.meshCount; m++)
+	{
+		Mesh& mesh = object.model.meshes[m];
 
-        if (mesh.vertexCount <= 0 || mesh.normals == nullptr || mesh.vertices == nullptr) return false;
+		if (mesh.vertexCount <= 0 || mesh.normals == nullptr || mesh.vertices == nullptr) return false;
 
-        for (int j = 0; j < mesh.vertexCount; j++)
-        {
-            Vector3 vertex = {
-                mesh.vertices[j * 3 + 0],
-                mesh.vertices[j * 3 + 1],
-                mesh.vertices[j * 3 + 2]
-            };
+		for (int j = 0; j < mesh.vertexCount; j++)
+		{
+			Vector3 vertex = {
+				mesh.vertices[j * 3 + 0],
+				mesh.vertices[j * 3 + 1],
+				mesh.vertices[j * 3 + 2]
+			};
 
-            Vector3 normal = {
-                mesh.normals[j * 3 + 0],
-                mesh.normals[j * 3 + 1],
-                mesh.normals[j * 3 + 2]
-            };
+			Vector3 normal = {
+				mesh.normals[j * 3 + 0],
+				mesh.normals[j * 3 + 1],
+				mesh.normals[j * 3 + 2]
+			};
 
-            float angleRad = object.rotationAngle * DEG2RAD;
-            Vector3 vertexRot = Vector3RotateByAxisAngle(vertex, object.rotationAxis, angleRad);
-            Vector3 normalRot = Vector3RotateByAxisAngle(normal, object.rotationAxis, angleRad);
+			float angleRad = object.rotationAngle * DEG2RAD;
+			Vector3 vertexRot = Vector3RotateByAxisAngle(vertex, object.rotationAxis, angleRad);
+			Vector3 normalRot = Vector3RotateByAxisAngle(normal, object.rotationAxis, angleRad);
 
-            Vector3 toPoint = Vector3Subtract(localPoint, vertexRot);
+			Vector3 toPoint = Vector3Subtract(localPoint, vertexRot);
 
-            float dot = Vector3DotProduct(normalRot, toPoint);
+			float dot = Vector3DotProduct(normalRot, toPoint);
 
-            if (dot < -EPSILON)
-            {
-                return false;
-            }
-        }
-    }
+			if (dot < -EPSILON)
+			{
+				return false;
+			}
+		}
+	}
 
-    return true;
+	return true;
 }
 
 
@@ -107,6 +107,8 @@ int main()
 {
 	const int screenWidth = 1600;
 	const int screenHeight = 900;
+
+	Vector3 gridSize = { 5.0f, 5.0f, 5.0f };
 
 	InitWindow(screenWidth, screenHeight, "TP03_Algebra");
 	SetWindowState(FLAG_WINDOW_RESIZABLE);
@@ -184,7 +186,7 @@ int main()
 			currentObject--;
 			if (currentObject < 0)
 			{
-				currentObject = objects.size()-1;
+				currentObject = objects.size() - 1;
 			}
 
 			obj = objects[currentObject];
@@ -237,6 +239,8 @@ int main()
 
 		int collisions = 0;
 
+		std::vector<Vector3> points;
+
 		for (int i = 0; i < objects.size(); i++)
 		{
 			if (objects[i].needUpdate)
@@ -245,15 +249,35 @@ int main()
 				objects[i].needUpdate = false;
 			}
 
-			for (int j = i+1; j < objects.size(); j++) {
+			for (int j = i + 1; j < objects.size(); j++) {
 
 				if (BoundingBoxCollision(objects[j].collider, objects[j].pos, objects[i].collider, objects[i].pos))
 				{
-					objects[i].colliding = true;
-					objects[j].colliding = true;
-					objects[i].color = RED;
-					objects[j].color = RED;
-					collisions++;
+					for (int x = -gridSize.x/2; x < gridSize.x/2; x++)
+					{
+						for (int y = -gridSize.y / 2; y < gridSize.y/2; y++) {
+
+							for (int z = -gridSize.z / 2; z < gridSize.z/2; z++) {
+
+								Vector3 point = { x,y,z };
+								point = Vector3Add(point,objects[i].pos);
+								point.x = (int)point.x;
+								point.y = (int)point.y;
+								point.z = (int)point.z;
+
+
+								points.push_back(point);
+
+								if (IsPointInside(point, objects[i]) && IsPointInside(point, objects[j])) {
+									objects[i].colliding = true;
+									objects[j].colliding = true;
+									objects[i].color = RED;
+									objects[j].color = RED;
+									collisions++;
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -278,6 +302,11 @@ int main()
 		DrawModelEx(obj.model, obj.pos, obj.rotationAxis, obj.rotationAngle, { 1.0f,1.0f,1.0f }, obj.color);
 		DrawModelWiresEx(obj.model, obj.pos, obj.rotationAxis, obj.rotationAngle, { 1.0f,1.0f,1.0f }, BLACK);
 		DrawCubeWiresV(obj.pos, Vector3Subtract(obj.collider.max, obj.collider.min), MAGENTA);
+
+		for (int i = 0; i < points.size()-1; i+=2)
+		{
+			DrawSphere(points[i],0.25f,MAGENTA);
+		}
 
 		EndMode3D();
 
