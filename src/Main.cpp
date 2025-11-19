@@ -60,6 +60,48 @@ bool BoundingBoxCollision(MyBoundingBox& a, Vector3 aPos, MyBoundingBox& b, Vect
 }
 
 
+bool IsPointInside(Vector3 point, Object object) {
+
+    Vector3 localPoint = Vector3Subtract(point, object.pos);
+
+    for (int m = 0; m < object.model.meshCount; m++)
+    {
+        Mesh &mesh = object.model.meshes[m];
+
+        if (mesh.vertexCount <= 0 || mesh.normals == nullptr || mesh.vertices == nullptr) return false;
+
+        for (int j = 0; j < mesh.vertexCount; j++)
+        {
+            Vector3 vertex = {
+                mesh.vertices[j * 3 + 0],
+                mesh.vertices[j * 3 + 1],
+                mesh.vertices[j * 3 + 2]
+            };
+
+            Vector3 normal = {
+                mesh.normals[j * 3 + 0],
+                mesh.normals[j * 3 + 1],
+                mesh.normals[j * 3 + 2]
+            };
+
+            float angleRad = object.rotationAngle * DEG2RAD;
+            Vector3 vertexRot = Vector3RotateByAxisAngle(vertex, object.rotationAxis, angleRad);
+            Vector3 normalRot = Vector3RotateByAxisAngle(normal, object.rotationAxis, angleRad);
+
+            Vector3 toPoint = Vector3Subtract(localPoint, vertexRot);
+
+            float dot = Vector3DotProduct(normalRot, toPoint);
+
+            if (dot < -EPSILON)
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 
 int main()
 {
